@@ -1,4 +1,6 @@
-package no.hartvigsen;
+package no.hartvigsen.model;
+
+import no.hartvigsen.model.VibrationData;
 
 import java.time.ZonedDateTime;
 import java.util.List;

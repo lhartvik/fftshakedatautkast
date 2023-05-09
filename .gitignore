@@ -1,3 +1,4 @@
 src/main/resources/parkinsontracker-export.json
 target
 .idea
+__init__.py

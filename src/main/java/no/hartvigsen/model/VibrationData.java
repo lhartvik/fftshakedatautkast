@@ -1,4 +1,4 @@
-package no.hartvigsen;
+package no.hartvigsen.model;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;

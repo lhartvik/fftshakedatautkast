@@ -1,5 +1,7 @@
 package no.hartvigsen;
 
+import no.hartvigsen.model.ReadJSONResults;
+import no.hartvigsen.model.VibrationData;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
