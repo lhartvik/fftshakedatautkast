@@ -8,17 +8,20 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class ReadJSON {
+    ZoneId norwegianTimeZone = ZoneId.of("Europe/Oslo");
+public static final String FILNAVN = "parkinsontracker-export.json";
+    String content = lesFil();
+
     public ReadJSONResults read() {
-        String content = lesFil("parkinsontracker-export.json");
         JSONObject jsonObject = new JSONObject(content);
 
         List<VibrationData> vibrationDataList = new ArrayList<>();
@@ -32,19 +35,17 @@ public class ReadJSON {
             while (keys1.hasNext()) {
                 String s1 = keys1.next();
                 JSONArray ja = (JSONArray) j.get(s1);
-                Iterator<Object> iterator = ja.iterator();
-                while (iterator.hasNext()) {
-                    JSONObject next = (JSONObject) iterator.next();
+                for (Object value : ja) {
+                    JSONObject next = (JSONObject) value;
                     if (s.equals("Shakerecords")) {
                         JSONArray array = (JSONArray) next.get("vibrationData");
                         VibrationData v = new VibrationData((String) next.get("timestamp"));
-                        Iterator<Object> iterator1 = array.iterator();
-                        while (iterator1.hasNext()) {
-                            v.addVibrationdata((BigDecimal) iterator1.next());
+                        for (Object o : array) {
+                            v.addVibrationdata((BigDecimal) o);
                         }
                         vibrationDataList.add(v);
                     } else if (s.equals("Pilltimes")) {
-                        pilltimes.add(ZonedDateTime.parse((String) next.get("timestamp")));
+                        pilltimes.add(ZonedDateTime.parse((String) next.get("timestamp")).withZoneSameInstant(norwegianTimeZone));
                     }
                 }
             }
@@ -52,12 +53,10 @@ public class ReadJSON {
         return new ReadJSONResults(vibrationDataList, pilltimes);
     }
 
-    private String lesFil(String filename) {
+    private String lesFil() {
         try {
-            return new String(Files.readAllBytes(Paths.get(ClassLoader.getSystemResource(filename).toURI())), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (URISyntaxException e) {
+            return Files.readString(Paths.get(ClassLoader.getSystemResource(FILNAVN).toURI()));
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }

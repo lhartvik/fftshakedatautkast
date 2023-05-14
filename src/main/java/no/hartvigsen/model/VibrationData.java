@@ -1,17 +1,19 @@
 package no.hartvigsen.model;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class VibrationData {
-    private ZonedDateTime timestamp;
+    ZoneId norwegianTimeZone = ZoneId.of("Europe/Oslo");
+    private final ZonedDateTime timestamp;
 
-    private List<BigDecimal> vibrationdata;
+    private final List<BigDecimal> vibrationdata;
 
     public VibrationData(String timestamp) {
-        this.timestamp = ZonedDateTime.parse(timestamp);
+        this.timestamp = ZonedDateTime.parse(timestamp).withZoneSameInstant(norwegianTimeZone);
         vibrationdata = new ArrayList<>();
     }
 
