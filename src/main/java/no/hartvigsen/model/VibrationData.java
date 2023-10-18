@@ -6,15 +6,16 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.time.format.DateTimeFormatter.ofPattern;
+
 public class VibrationData {
-    ZoneId norwegianTimeZone = ZoneId.of("Europe/Oslo");
     private final ZonedDateTime timestamp;
 
-    private final List<BigDecimal> vibrationdata;
+    private final List<BigDecimal> datalist;
 
     public VibrationData(String timestamp) {
-        this.timestamp = ZonedDateTime.parse(timestamp).withZoneSameInstant(norwegianTimeZone);
-        vibrationdata = new ArrayList<>();
+        this.timestamp = ZonedDateTime.parse(timestamp).withZoneSameInstant(ZoneId.of("Europe/Oslo"));
+        datalist = new ArrayList<>();
     }
 
     public ZonedDateTime getTimestamp() {
@@ -22,11 +23,15 @@ public class VibrationData {
     }
 
     public List<BigDecimal> getVibrationdata() {
-        return vibrationdata;
+        return datalist;
     }
 
     public void addVibrationdata(BigDecimal vibrationdata) {
-        this.vibrationdata.add(vibrationdata);
+        this.datalist.add(vibrationdata);
     }
 
+    @Override
+    public String toString() {
+        return "VibrationData " + timestamp.format(ofPattern("yyyy-MM-dd, HH:mm"));
+    }
 }

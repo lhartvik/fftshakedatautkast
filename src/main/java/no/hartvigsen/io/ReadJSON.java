@@ -1,11 +1,14 @@
-package no.hartvigsen;
+package no.hartvigsen.io;
 
+import no.hartvigsen.model.Pill;
+import no.hartvigsen.model.Pilltime;
 import no.hartvigsen.model.ReadJSONResults;
 import no.hartvigsen.model.VibrationData;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -18,14 +21,17 @@ import java.util.List;
 
 public class ReadJSON {
     ZoneId norwegianTimeZone = ZoneId.of("Europe/Oslo");
-public static final String FILNAVN = "parkinsontracker-export.json";
-    String content = lesFil();
+    public static final String STANDARD_FILNAVN = "vibration_data.json";
 
-    public ReadJSONResults read() {
-        JSONObject jsonObject = new JSONObject(content);
+    public ReadJSONResults read() throws URISyntaxException {
+        return read(STANDARD_FILNAVN);
+    }
+
+    public ReadJSONResults read(String filnavn) throws URISyntaxException {
+        JSONObject jsonObject = new JSONObject(lesFil(filnavn));
 
         List<VibrationData> vibrationDataList = new ArrayList<>();
-        List<ZonedDateTime> pilltimes = new ArrayList<>();
+        List<Pilltime> pilltimes = new ArrayList<>();
 
         Iterator<String> keys = jsonObject.keys();
         while (keys.hasNext()) {
@@ -45,7 +51,10 @@ public static final String FILNAVN = "parkinsontracker-export.json";
                         }
                         vibrationDataList.add(v);
                     } else if (s.equals("Pilltimes")) {
-                        pilltimes.add(ZonedDateTime.parse((String) next.get("timestamp")).withZoneSameInstant(norwegianTimeZone));
+                        JSONObject medisin = next.optJSONObject("medisin");
+
+                        Pilltime pilltime = new Pilltime(ZonedDateTime.parse((String) next.get("timestamp")).withZoneSameInstant(norwegianTimeZone), parseMedisin(medisin));
+                        pilltimes.add(pilltime);
                     }
                 }
             }
@@ -53,11 +62,22 @@ public static final String FILNAVN = "parkinsontracker-export.json";
         return new ReadJSONResults(vibrationDataList, pilltimes);
     }
 
-    private String lesFil() {
+    private Pill parseMedisin(JSONObject medisin) {
+        if ((medisin != null)) {
+            Object styrke = medisin.get("Styrke");
+            String styrke3siffer = styrke.toString().substring(0, 3);
+            int styrkeMg = Integer.parseInt(styrke3siffer);
+            return new Pill("Sinemet", styrkeMg);
+        } else {
+            return new Pill("Sinemet", 100);
+        }
+    }
+
+    private String lesFil(String filnavn) throws URISyntaxException {
         try {
-            return Files.readString(Paths.get(ClassLoader.getSystemResource(FILNAVN).toURI()));
-        } catch (IOException | URISyntaxException e) {
-            throw new RuntimeException(e);
+            return Files.readString(Paths.get(ClassLoader.getSystemResource(filnavn).toURI()));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }

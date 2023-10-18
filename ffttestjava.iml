@@ -5,4 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
   </component>
+  <component name="SonarLintModuleSettings">
+    <option name="uniqueId" value="674ac501-2f5f-4e0c-be87-ae6217aa5430" />
+  </component>
 </module>

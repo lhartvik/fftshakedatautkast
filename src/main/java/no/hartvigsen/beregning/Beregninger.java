@@ -1,4 +1,4 @@
-package no.hartvigsen;
+package no.hartvigsen.beregning;
 
 import com.tambapps.fft4j.FastFouriers;
 import no.hartvigsen.model.DominantFrequencyData;
@@ -7,31 +7,39 @@ import no.hartvigsen.model.VibrationData;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toMap;
 
-public class Beregninger {
+public final class Beregninger {
+
+    private Beregninger(){}
     public static OptionalDouble of(List<BigDecimal> signal) {
         double average = signal.stream().mapToDouble(BigDecimal::doubleValue).summaryStatistics().getAverage();
-        OptionalDouble averageAbsoluteNoiselevel = signal.stream().mapToDouble(BigDecimal::doubleValue).map(d -> Math.abs(d - average)).average();
-        return averageAbsoluteNoiselevel;
+        return signal.stream().mapToDouble(BigDecimal::doubleValue).map(d -> Math.abs(d - average)).average();
     }
 
     public static Map<ZonedDateTime, Double> noiselevels(List<VibrationData> vibrationDataList) {
         return vibrationDataList.stream()
                 .collect(toMap(
                         VibrationData::getTimestamp,
-                        v -> Beregninger.of(v.getVibrationdata())
+                        v -> Beregninger.of(v.getVibrationdata()),
+                        (a, b) -> b
                 ))
                 .entrySet().stream()
                 .filter(e -> e.getValue().isPresent())
                 .collect(toMap(
                         Map.Entry::getKey,
                         e -> e.getValue().getAsDouble(),
-                        (a,b) -> b, TreeMap::new));
+                        (a, b) -> b, TreeMap::new));
     }
 
     private static double glidendeSnitt(double[] ar, int x, int range) {
@@ -57,12 +65,10 @@ public class Beregninger {
     }
 
     public static FrequencyAmplitude getMainFrequency(List<FrequencyAmplitude> list) {
-        return list.stream()
-                .sorted(Comparator.comparingDouble(FrequencyAmplitude::getA).reversed())
-                .findFirst().orElseThrow();
+        return list.stream().max(Comparator.comparingDouble(FrequencyAmplitude::getA)).orElseThrow();
     }
 
-    public static Function<VibrationData, DominantFrequencyData> calculateDominantFrequency =
+    public static final Function<VibrationData, DominantFrequencyData> calculateDominantFrequency =
             v -> {
                 FrequencyAmplitude mainFrequency = getMainFrequency(computeSpectrum(v.getVibrationdata()));
                 return new DominantFrequencyData(v.getTimestamp(), mainFrequency.getF(), mainFrequency.getA());
