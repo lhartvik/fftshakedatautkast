@@ -4,23 +4,25 @@ import no.hartvigsen.beregning.Beregninger;
 import no.hartvigsen.beregning.TidSidenSistePilleMappingtabell;
 import no.hartvigsen.io.ReadJSON;
 import no.hartvigsen.model.ReadJSONResults;
-import no.hartvigsen.model.TimeIntensity;
+import no.hartvigsen.model.TidSkjelving;
 import no.hartvigsen.model.VibrationData;
 
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.time.Month;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static java.time.Month.APRIL;
 import static java.util.Comparator.comparing;
 
 public class MainTidSidenSistePille {
     public static void main(String[] args) throws URISyntaxException {
+        Month[] ALLE_MÅNEDER = Month.values();
         ReadJSONResults readJSONResults = new ReadJSON()
                 .read("vibration_data.json")
-                .filterFor(APRIL);
+                .filterFor(ALLE_MÅNEDER);
         Map<ZonedDateTime, Double> noiselevels = Beregninger.noiselevels(
                 readJSONResults.vibrationDataList());
 
@@ -29,20 +31,26 @@ public class MainTidSidenSistePille {
                         readJSONResults.pilltimes(),
                         readJSONResults.vibrationDataList().stream().map(VibrationData::getTimestamp).toList());
 
-        List<TimeIntensity> timeIntensities = noiselevels.entrySet().stream()
-                .map(e -> new TimeIntensity(e.getKey(), e.getValue(), tidSidenSistePille.get(e.getKey())))
+        Map<Integer, List<TidSkjelving>> timeIntensities = noiselevels.entrySet().stream()
+                .map(e -> new TidSkjelving(e.getKey(), e.getValue(), tidSidenSistePille.get(e.getKey()).duration(), tidSidenSistePille.get(e.getKey()).styrke()))
                 .filter(ti -> erMerEnn30Minutter(ti.tidSidenSistePille()))
                 .filter(ti -> erMindreEnn12Timer(ti.tidSidenSistePille()))
-                .sorted(comparing(TimeIntensity::time))
-                .toList();
-
-        System.out.println("timeIntensities.size() = " + timeIntensities.size());
+                .sorted(comparing(TidSkjelving::time))
+                .collect(Collectors.groupingBy(TidSkjelving::medisinstyrke));
+        timeIntensities.forEach((key1, value1) -> System.out.println(key1 + "mg: " + value1.size()));
         // times - minutt på døgnet
 
-        List<Double> list = timeIntensities.stream().map(TimeIntensity::intensity).toList();
+        timeIntensities.forEach((key, value) -> {
+            System.out.println("*****************" + key + "*****************");
+            extracted(value);
+        });
+    }
+
+    private static void extracted(List<TidSkjelving> timeIntensities) {
+        List<Double> list = timeIntensities.stream().map(TidSkjelving::intensity).toList();
         System.out.println("antall values = " + list.size());
         List<Long> tidSiden = timeIntensities.stream()
-                .map(TimeIntensity::tidSidenSistePille)
+                .map(TidSkjelving::tidSidenSistePille)
                 .map(Duration::getSeconds)
                 .map(l -> l / 60)
                 .toList();

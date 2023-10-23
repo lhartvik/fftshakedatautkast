@@ -8,7 +8,7 @@ import java.util.List;
 
 import static java.time.format.DateTimeFormatter.ofPattern;
 
-public class VibrationData {
+public class VibrationData implements Tidspunkt{
     private final ZonedDateTime timestamp;
 
     private final List<BigDecimal> datalist;
@@ -19,6 +19,9 @@ public class VibrationData {
     }
 
     public ZonedDateTime getTimestamp() {
+        return timestamp;
+    }
+    public ZonedDateTime tid() {
         return timestamp;
     }
 
